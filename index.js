@@ -1,9 +1,10 @@
+require('dotenv').config()
 const express = require('express')
 const app = express()
 const bodyParser = require('body-parser')
 const morgan = require('morgan')
 const cors = require('cors')
-const mongoose = require('mongoose')
+const Person = require('./models/person')
 
 
 app.use(bodyParser.json())
@@ -11,26 +12,6 @@ morgan.token('test', function (req, res) { return JSON.stringify(req.body) })
 app.use(morgan(':method :url :status :res[content-length] - :response-time ms :test'))
 app.use(cors())
 app.use(express.static('build'))
-
-
-const url = `mongodb+srv://fullstack:fullstack100DC@cluster0-dnmkn.mongodb.net/phonebook-app?retryWrites=true&w=majority`
-
-mongoose.connect(url, { useUnifiedTopology: true, useNewUrlParser: true })
-
-const personSchema = new mongoose.Schema({
-  name: String,
-  number: String
-})
-
-personSchema.set('toJSON', {
-  transform: (document, returnedObject) => {
-    returnedObject.id = returnedObject._id.toString()
-    delete returnedObject._id
-    delete returnedObject.__v
-  }
-})
-
-const Person = mongoose.model('Person', personSchema)
 
 let persons = [
   {
@@ -105,23 +86,22 @@ app.post('/api/persons', (req, res) => {
     return res.status(400).json({ error: 'Number is missing' })
   }
 
-  if (nameExists(body.name)) {
-    return res.status(400).json({ error: 'Name must be unique.' })
-  }
+  // if (nameExists(body.name)) {
+  //   return res.status(400).json({ error: 'Name must be unique.' })
+  // }
   
-  const person = {
+  const person = new Person({
     name: body.name,
-    number: body.number,
-    id: getRandomId(10, 100000000)
-  }
+    number: body.number
+  })
 
-  persons = persons.concat(person)
-
-  res.json(person)
+  person.save().then(savedPerson => {
+    res.json(savedPerson.toJSON())
+  })
 })
 
 
-const PORT = process.env.PORT || 3001
+const PORT = process.env.PORT
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`)
 })
