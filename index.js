@@ -3,12 +3,34 @@ const app = express()
 const bodyParser = require('body-parser')
 const morgan = require('morgan')
 const cors = require('cors')
+const mongoose = require('mongoose')
+
 
 app.use(bodyParser.json())
 morgan.token('test', function (req, res) { return JSON.stringify(req.body) })
 app.use(morgan(':method :url :status :res[content-length] - :response-time ms :test'))
 app.use(cors())
 app.use(express.static('build'))
+
+
+const url = `mongodb+srv://fullstack:fullstack100DC@cluster0-dnmkn.mongodb.net/phonebook-app?retryWrites=true&w=majority`
+
+mongoose.connect(url, { useUnifiedTopology: true, useNewUrlParser: true })
+
+const personSchema = new mongoose.Schema({
+  name: String,
+  number: String
+})
+
+personSchema.set('toJSON', {
+  transform: (document, returnedObject) => {
+    returnedObject.id = returnedObject._id.toString()
+    delete returnedObject._id
+    delete returnedObject.__v
+  }
+})
+
+const Person = mongoose.model('Person', personSchema)
 
 let persons = [
   {
@@ -49,7 +71,9 @@ app.get('/info', (req, res) => {
 })
 
 app.get('/api/persons', (req, res) => {
-  res.json(persons)
+  Person.find({}).then(persons => {
+    res.json(persons.map(person => person.toJSON()))
+  })
 })
 
 app.get('/api/persons/:id', (req, res) => {
