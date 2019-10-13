@@ -57,25 +57,26 @@ app.get('/api/persons', (req, res) => {
   })
 })
 
-app.get('/api/persons/:id', (req, res) => {
-  const id = Number(req.params.id)
-  const person = persons.find(person => person.id === id)
+app.get('/api/persons/:id', (req, res, next) => {
+  Person.findById(req.params.id)
+    .then(person => {
+      console.log(person);
+      if (person) {
+        res.json(person.toJSON())    
+      } else {
+        res.status(404).end()
+      }
+    })
+    .catch(err => next(err))
 
-  if (person) {
-    res.json(person)    
-  } else {
-    res.status(404).end()
-  }
 })
 
-app.delete('/api/persons/:id', (req, res) => {
+app.delete('/api/persons/:id', (req, res, next) => {
   Person.findByIdAndRemove(req.params.id)
     .then(result => {
       res.status(204).end()      
     })
-    .catch(err => {
-      console.log(err)
-    })
+    .catch(err => next(err))
 })
 
 app.post('/api/persons', (req, res) => {
@@ -102,6 +103,52 @@ app.post('/api/persons', (req, res) => {
     res.json(savedPerson.toJSON())
   })
 })
+
+
+app.put('/api/persons/:id', (req, res, next) => {
+  const body = req.body
+
+  if (!body.name) {
+    return res.status(400).json({ error: 'Name is missing' })
+  }
+
+  if (!body.number) {
+    return res.status(400).json({ error: 'Number is missing' })
+  }
+
+  // if (nameExists(body.name)) {
+  //   return res.status(400).json({ error: 'Name must be unique.' })
+  // }
+  
+  const person = {
+    name: body.name,
+    number: body.number
+  }
+
+  Person.findByIdAndUpdate(req.params.id, person, { new: true })
+    .then(updatedPerson => {
+      res.json(updatedPerson.toJSON())
+    })
+    .catch(err => next(err))
+})
+
+const unknownEndpoint = (req, res) => {
+  res.status(404).send({ error: 'unknown endpoint' })
+}
+
+app.use(unknownEndpoint)
+
+const errorHandler = (err, req, res, next) => {
+  console.log(err.message)
+
+  if (err.name === 'CastError' && err.kind === 'ObjectId') {
+    return res.status(400).send({ error: 'malformatted id' })
+  }
+
+  next(err)
+}
+
+app.use(errorHandler)
 
 
 const PORT = process.env.PORT
