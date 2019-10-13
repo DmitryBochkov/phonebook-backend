@@ -47,8 +47,11 @@ const nameExists = name => {
 }
 
 app.get('/info', (req, res) => {
-  const string = `<p>Phonebook has info for ${persons.length} people.</p><p>${new Date()}</p>`
-  res.send(string)
+  Person.find({})
+    .then(result => {
+      const string = `<p>Phonebook has info for ${result.length} people.</p><p>${new Date()}</p>`
+      res.send(string)
+    })
 })
 
 app.get('/api/persons', (req, res) => {
