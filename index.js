@@ -10,39 +10,39 @@ const Person = require('./models/person')
 
 
 app.use(bodyParser.json())
-morgan.token('test', function (req, res) { return JSON.stringify(req.body) })
+morgan.token('test', function (req) { return JSON.stringify(req.body) })
 app.use(morgan(':method :url :status :res[content-length] - :response-time ms :test'))
 app.use(cors())
 app.use(express.static('build'))
 
-let persons = [
-  {
-    name: "Ada Lovelace",
-    number: "39-44-5323523",
-    id: 2
-  },
-  {
-    name: "Dan Abramov",
-    number: "12-43-234345",
-    id: 3
-  },
-  {
-    name: "Mary Poppendieck",
-    number: "39-23-6423122",
-    id: 4
-  },
-  {
-    name: "Artur Hellas",
-    number: "050-123456",
-    id: 5
-  }
-]
+// let persons = [
+//   {
+//     name: 'Ada Lovelace',
+//     number: '39-44-5323523',
+//     id: 2
+//   },
+//   {
+//     name: 'Dan Abramov',
+//     number: '12-43-234345',
+//     id: 3
+//   },
+//   {
+//     name: 'Mary Poppendieck',
+//     number: '39-23-6423122',
+//     id: 4
+//   },
+//   {
+//     name: 'Artur Hellas',
+//     number: '050-123456',
+//     id: 5
+//   }
+// ]
 
-const getRandomId = (min, max) => {
-  min = Math.ceil(min);
-  max = Math.floor(max);
-  return Math.floor(Math.random() * (max - min + 1)) + min; 
-}
+// const getRandomId = (min, max) => {
+//   min = Math.ceil(min);
+//   max = Math.floor(max);
+//   return Math.floor(Math.random() * (max - min + 1)) + min
+// }
 
 // const nameExists = name => {
 //   return persons.some(p => p.name === name)
@@ -65,9 +65,9 @@ app.get('/api/persons', (req, res) => {
 app.get('/api/persons/:id', (req, res, next) => {
   Person.findById(req.params.id)
     .then(person => {
-      console.log(person);
+      console.log(person)
       if (person) {
-        res.json(person.toJSON())    
+        res.json(person.toJSON())
       } else {
         res.status(404).end()
       }
@@ -78,15 +78,15 @@ app.get('/api/persons/:id', (req, res, next) => {
 
 app.delete('/api/persons/:id', (req, res, next) => {
   Person.findByIdAndRemove(req.params.id)
-    .then(result => {
-      res.status(204).end()      
+    .then(() => {
+      res.status(204).end()
     })
     .catch(err => next(err))
 })
 
 app.post('/api/persons', (req, res, next) => {
   const body = req.body
-  
+
   const person = new Person({
     name: body.name,
     number: body.number
@@ -102,7 +102,7 @@ app.post('/api/persons', (req, res, next) => {
 
 app.put('/api/persons/:id', (req, res, next) => {
   const body = req.body
-  
+
   const person = {
     name: body.name,
     number: body.number
