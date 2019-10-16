@@ -1,4 +1,6 @@
-require('dotenv').config()
+if (process.env.NODE_ENV !== 'production') {
+  require('dotenv').config()
+}
 const express = require('express')
 const app = express()
 const bodyParser = require('body-parser')
@@ -42,9 +44,9 @@ const getRandomId = (min, max) => {
   return Math.floor(Math.random() * (max - min + 1)) + min; 
 }
 
-const nameExists = name => {
-  return persons.some(p => p.name === name)
-}
+// const nameExists = name => {
+//   return persons.some(p => p.name === name)
+// }
 
 app.get('/info', (req, res) => {
   Person.find({})
@@ -82,46 +84,24 @@ app.delete('/api/persons/:id', (req, res, next) => {
     .catch(err => next(err))
 })
 
-app.post('/api/persons', (req, res) => {
+app.post('/api/persons', (req, res, next) => {
   const body = req.body
-
-  if (!body.name) {
-    return res.status(400).json({ error: 'Name is missing' })
-  }
-
-  if (!body.number) {
-    return res.status(400).json({ error: 'Number is missing' })
-  }
-
-  // if (nameExists(body.name)) {
-  //   return res.status(400).json({ error: 'Name must be unique.' })
-  // }
   
   const person = new Person({
     name: body.name,
     number: body.number
   })
 
-  person.save().then(savedPerson => {
-    res.json(savedPerson.toJSON())
-  })
+  person.save()
+    .then(savedPerson => {
+      res.json(savedPerson.toJSON())
+    })
+    .catch(err => next(err))
 })
 
 
 app.put('/api/persons/:id', (req, res, next) => {
   const body = req.body
-
-  if (!body.name) {
-    return res.status(400).json({ error: 'Name is missing' })
-  }
-
-  if (!body.number) {
-    return res.status(400).json({ error: 'Number is missing' })
-  }
-
-  // if (nameExists(body.name)) {
-  //   return res.status(400).json({ error: 'Name must be unique.' })
-  // }
   
   const person = {
     name: body.name,
@@ -146,6 +126,8 @@ const errorHandler = (err, req, res, next) => {
 
   if (err.name === 'CastError' && err.kind === 'ObjectId') {
     return res.status(400).send({ error: 'malformatted id' })
+  } else if (err.name === 'ValidationError') {
+    return res.status(400).json({ err: err.message })
   }
 
   next(err)
